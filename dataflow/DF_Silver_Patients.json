@@ -1,0 +1,87 @@
+{
+	"name": "DF_Silver_Patients",
+	"properties": {
+		"folder": {
+			"name": "Silver"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DS_Bronze_Patients",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [],
+			"transformations": [
+				{
+					"name": "derivedColumn1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          patient_id as string,",
+				"          full_name as string,",
+				"          gender as string,",
+				"          date_of_birth as string,",
+				"          phone as string,",
+				"          email as string,",
+				"          address as string,",
+				"          insurance_provider as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> source1",
+				"source1 derive(full_name = trim(full_name),",
+				"          gender = iif(\r",
+				"    lower(trim(gender)) == 'm' || lower(trim(gender)) == 'male',\r",
+				"    'Male',\r",
+				"    iif(\r",
+				"        lower(trim(gender)) == 'f' || lower(trim(gender)) == 'female',\r",
+				"        'Female',\r",
+				"        toString(null())\r",
+				"    )\r",
+				"),",
+				"          date_of_birth = iif(\r",
+				"    isDate(trim(date_of_birth), 'yyyy-MM-dd'),\r",
+				"    toDate(trim(date_of_birth), 'yyyy-MM-dd'),\r",
+				"    iif(\r",
+				"        isDate(trim(date_of_birth), 'MM/dd/yyyy'),\r",
+				"        toDate(trim(date_of_birth), 'MM/dd/yyyy'),\r",
+				"        iif(\r",
+				"            isDate(trim(date_of_birth), 'dd-MMM-yyyy'),\r",
+				"            toDate(trim(date_of_birth), 'dd-MMM-yyyy'),\r",
+				"            iif(\r",
+				"                isDate(trim(date_of_birth), 'MMMM dd, yyyy'),\r",
+				"                toDate(trim(date_of_birth), 'MMMM dd, yyyy'),\r",
+				"                iif(\r",
+				"                    isDate(trim(date_of_birth), 'MM-dd-yy'),\r",
+				"                    toDate(\r",
+				"                        concat(\r",
+				"                            iif(\r",
+				"                                toInteger(substring(trim(date_of_birth), 6, 2)) <= 26,\r",
+				"                                '20',\r",
+				"                                '19'\r",
+				"                            ),\r",
+				"                            substring(trim(date_of_birth), 6, 2),\r",
+				"                            '-',\r",
+				"                            substring(trim(date_of_birth), 1, 2),\r",
+				"                            '-',\r",
+				"                            substring(trim(date_of_birth), 4, 2)\r",
+				"                        ),\r",
+				"                        'yyyy-MM-dd'\r",
+				"                    ),\r",
+				"                    toDate(null())\r",
+				"                )\r",
+				"            )\r",
+				"        )\r",
+				"    )\r",
+				")) ~> derivedColumn1"
+			]
+		}
+	}
+}
