@@ -15,10 +15,30 @@
 					"name": "source1"
 				}
 			],
-			"sinks": [],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DS_Silver_Patients",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
 			"transformations": [
 				{
 					"name": "derivedColumn1"
+				},
+				{
+					"name": "derivedColumn2"
+				},
+				{
+					"name": "filter1"
+				},
+				{
+					"name": "window1"
+				},
+				{
+					"name": "filter2"
 				}
 			],
 			"scriptLines": [
@@ -80,7 +100,49 @@
 				"            )\r",
 				"        )\r",
 				"    )\r",
-				")) ~> derivedColumn1"
+				"),",
+				"          patient_id = toInteger(trim(patient_id))) ~> derivedColumn1",
+				"derivedColumn1 derive(phone = iif(     isNull(phone) || trim(phone) == '' || lower(trim(phone)) == 'unknown',     toString(null()),     regexReplace(trim(phone), '[^0-9]', '') ),",
+				"          email = iif(     isNull(email) || trim(email) == '',     toString(null()),     iif(         regexMatch(             lower(trim(email)),             '^[a-z0-9._%+-]+@[a-z0-9.-]+\\\\.[a-z]{2,}$'         ),         lower(trim(email)),         toString(null())     ) ),",
+				"          address = iif(     isNull(address) || trim(address) == '',     toString(null()),     regexReplace(trim(address), '\\\\s+', ' ') ),",
+				"          insurance_provider = iif(     isNull(insurance_provider) || trim(insurance_provider) == '',     toString(null()),     iif(         lower(trim(insurance_provider)) == 'aetna' ||         lower(trim(insurance_provider)) == 'aetnaa' ||         lower(trim(insurance_provider)) == 'aetna inc.',         'Aetna',         iif(             lower(trim(insurance_provider)) == 'cigna',             'Cigna',             trim(insurance_provider)         )     ) )) ~> derivedColumn2",
+				"derivedColumn2 filter(!isNull(patient_id) &&",
+				"!isNull(full_name) &&",
+				"trim(full_name) != '') ~> filter1",
+				"filter1 window(over(patient_id),",
+				"     asc(full_name, true),",
+				"     NumeroFila = rowNumber()) ~> window1",
+				"window1 filter(NumeroFila == 1) ~> filter2",
+				"filter2 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          patient_id as integer,",
+				"          full_name as string,",
+				"          gender as string,",
+				"          date_of_birth as date,",
+				"          phone as string,",
+				"          email as string,",
+				"          address as string,",
+				"          insurance_provider as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          patient_id,",
+				"          full_name,",
+				"          gender,",
+				"          date_of_birth,",
+				"          phone,",
+				"          email,",
+				"          address,",
+				"          insurance_provider",
+				"     )) ~> sink1"
 			]
 		}
 	}
