@@ -1,0 +1,10 @@
+{
+	"name": "adf-ucb-hospital-us-7690118416",
+	"properties": {
+		"trustModeClaimForMi": {
+			"value": "Disabled",
+			"editable": true
+		}
+	},
+	"location": "eastus"
+}
