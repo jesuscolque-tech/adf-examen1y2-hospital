@@ -1,0 +1,156 @@
+{
+	"name": "DF_Silver_Diagnoses",
+	"properties": {
+		"folder": {
+			"name": "Silver"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DS_Bronze_Diagnoses",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				},
+				{
+					"dataset": {
+						"referenceName": "DS_Silver_Admissions",
+						"type": "DatasetReference"
+					},
+					"name": "source2"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DS_Silver_Diagnoses",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "filter1"
+				},
+				{
+					"name": "exists1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          diagnosis_id as string,",
+				"          admission_id as string,",
+				"          icd_code as string,",
+				"          diagnosis_description as string,",
+				"          severity as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> source1",
+				"source(output(",
+				"          admission_id as integer,",
+				"          patient_id as integer,",
+				"          admission_date as date,",
+				"          discharge_date as date,",
+				"          department as string,",
+				"          attending_doctor_id as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> source2",
+				"source1 derive(diagnosis_id = iif(     isNull(diagnosis_id) || trim(diagnosis_id) == '',     toInteger(null()),     toInteger(trim(diagnosis_id)) ),",
+				"          admission_id = iif(     isNull(admission_id) || trim(admission_id) == '',     toInteger(null()),     toInteger(trim(admission_id)) ),",
+				"          icd_code = iif(\r",
+				"    isNull(icd_code) || trim(icd_code) == '',\r",
+				"    toString(null()),\r",
+				"    regexReplace(\r",
+				"        regexReplace(\r",
+				"            regexReplace(\r",
+				"                regexReplace(\r",
+				"                    regexReplace(\r",
+				"                        regexReplace(\r",
+				"                            regexReplace(\r",
+				"                                regexReplace(\r",
+				"                                    regexReplace(\r",
+				"                                        regexReplace(\r",
+				"                                            regexReplace(\r",
+				"                                                upper(trim(icd_code)),\r",
+				"                                                '-',\r",
+				"                                                '.'\r",
+				"                                            ),\r",
+				"                                            '\\\\s*,\\\\s*',\r",
+				"                                            ', '\r",
+				"                                        ),\r",
+				"                                        'C50911',\r",
+				"                                        'C50.911'\r",
+				"                                    ),\r",
+				"                                    'E119',\r",
+				"                                    'E11.9'\r",
+				"                                ),\r",
+				"                                'F329',\r",
+				"                                'F32.9'\r",
+				"                            ),\r",
+				"                            'J45909',\r",
+				"                            'J45.909'\r",
+				"                        ),\r",
+				"                        'K219',\r",
+				"                        'K21.9'\r",
+				"                    ),\r",
+				"                    'M545',\r",
+				"                    'M54.5'\r",
+				"                ),\r",
+				"                'N390',\r",
+				"                'N39.0'\r",
+				"            ),\r",
+				"            'S72001A',\r",
+				"            'S72.001A'\r",
+				"        ),\r",
+				"        '\\\\s+',\r",
+				"        ' '\r",
+				"    )\r",
+				"),",
+				"          diagnosis_description = iif(     isNull(diagnosis_description) ||     trim(diagnosis_description) == '',     toString(null()),     regexReplace(trim(diagnosis_description), '\\\\s+', ' ') ),",
+				"          severity = iif(     isNull(severity) || trim(severity) == '' ||     lower(trim(severity)) == 'unknown' ||     lower(trim(severity)) == 'n/a',     toString(null()),     iif(         lower(trim(severity)) == 'mild',         'Mild',         iif(             lower(trim(severity)) == 'moderate' ||             lower(trim(severity)) == 'mod',             'Moderate',             iif(                 lower(trim(severity)) == 'severe',                 'Severe',                 iif(                     lower(trim(severity)) == 'critical',                     'Critical',                     initCap(lower(trim(severity)))                 )             )         )     ) )) ~> derivedColumn1",
+				"derivedColumn1 filter(!isNull(diagnosis_id) &&",
+				"!isNull(admission_id) &&",
+				"!isNull(icd_code) &&",
+				"trim(icd_code) != '') ~> filter1",
+				"filter1, source2 exists(derivedColumn1@admission_id == source2@admission_id,",
+				"     negate:false,",
+				"     broadcast: 'auto')~> exists1",
+				"exists1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          diagnosis_id as integer,",
+				"          admission_id as integer,",
+				"          icd_code as string,",
+				"          diagnosis_description as string,",
+				"          severity as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          diagnosis_id,",
+				"          admission_id,",
+				"          icd_code,",
+				"          diagnosis_description,",
+				"          severity",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}
