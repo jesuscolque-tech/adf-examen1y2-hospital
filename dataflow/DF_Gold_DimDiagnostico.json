@@ -34,7 +34,7 @@
 				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     isolationLevel: 'READ_UNCOMMITTED',",
-				"     query: 'SELECT DISTINCT\\n    TRIM(icd_code) AS codigo_icd,\\n\\n    NULLIF(\\n        TRIM(diagnosis_description),\\n        \\'\\'\\n    ) AS descripcion_patologia,\\n\\n    COALESCE(\\n        NULLIF(TRIM(severity), \\'\\'),\\n        \\'No especificado\\'\\n    ) AS nivel_severidad\\n\\nFROM silver.diagnoses\\n\\nWHERE icd_code IS NOT NULL\\n  AND TRIM(icd_code) <> \\'\\'',",
+				"     query: 'SELECT DISTINCT\\n    TRIM(icd_code) AS codigo_icd,\\n    NULLIF(TRIM(diagnosis_description), \\'\\') AS descripcion_patologia,\\n    COALESCE(\\n        NULLIF(TRIM(severity), \\'\\'),\\n        \\'No especificado\\'\\n    ) AS nivel_severidad\\nFROM silver.diagnoses\\n\\nUNION ALL\\n\\nSELECT\\n    \\'SIN_DIAGNOSTICO\\' AS codigo_icd,\\n    \\'Sin diagnóstico registrado\\' AS descripcion_patologia,\\n    \\'No especificado\\' AS nivel_severidad',",
 				"     format: 'query') ~> source1",
 				"source1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",

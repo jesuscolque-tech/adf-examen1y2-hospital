@@ -178,7 +178,7 @@
 					"scripts": [
 						{
 							"type": "NonQuery",
-							"text": "DELETE FROM gold.dim_servicio_cargo\nDELETE FROM gold.dim_diagnostico\nDELETE FROM gold.dim_departamento\nDELETE FROM gold.dim_paciente\nDELETE FROM gold.dim_fecha\nDELETE FROM gold.fact_facturacion\nDELETE FROM gold.fact_admisiones"
+							"text": "-- Primero eliminamos los registros de los FACTS\nDELETE FROM gold.fact_facturacion;\nDELETE FROM gold.fact_admisiones;\n\n-- Después eliminamos los registros de las DIMENSIONES\nDELETE FROM gold.dim_servicio_cargo;\nDELETE FROM gold.dim_diagnostico;\nDELETE FROM gold.dim_departamento;\nDELETE FROM gold.dim_paciente;\nDELETE FROM gold.dim_fecha;"
 						}
 					],
 					"scriptBlockExecutionTimeout": "02:00:00"

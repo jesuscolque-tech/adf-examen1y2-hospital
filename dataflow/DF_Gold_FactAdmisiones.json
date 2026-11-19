@@ -41,6 +41,13 @@
 						"type": "DatasetReference"
 					},
 					"name": "srcDimDiagnostico"
+				},
+				{
+					"dataset": {
+						"referenceName": "gold_dim_diagnostico",
+						"type": "DatasetReference"
+					},
+					"name": "srcDiagnosticoGenerico"
 				}
 			],
 			"sinks": [
@@ -73,6 +80,12 @@
 				},
 				{
 					"name": "derivedDimDiagnostico"
+				},
+				{
+					"name": "lookup5"
+				},
+				{
+					"name": "derivedColumn2"
 				}
 			],
 			"scriptLines": [
@@ -132,6 +145,14 @@
 				"     validateSchema: false,",
 				"     isolationLevel: 'READ_UNCOMMITTED',",
 				"     format: 'table') ~> srcDimDiagnostico",
+				"source(output(",
+				"          diagnostico_key_generico as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     query: 'SELECT diagnostico_key AS diagnostico_key_generico\\nFROM gold.dim_diagnostico\\nWHERE codigo_icd = \\'SIN_DIAGNOSTICO\\'',",
+				"     format: 'query') ~> srcDiagnosticoGenerico",
 				"srcAdmisiones, srcDimPaciente lookup(patient_id == patient_id_bk,",
 				"     multiple: false,",
 				"     pickup: 'any',",
@@ -158,13 +179,17 @@
 				"    toInteger(null()),\r",
 				"    toInteger(minus(discharge_date, admission_date))\r",
 				"),",
-				"          conteo_admisiones = 1,",
-				"          diagnostico_key = iif(     isNull(diagnostico_key),     3983,     diagnostico_key )) ~> derivedColumn1",
+				"          conteo_admisiones = 1) ~> derivedColumn1",
 				"srcDiagnosticos derive(severity = iif(     isNull(severity) || trim(severity) == '',     'No especificado',     trim(severity) ),",
 				"          diagnosis_description = iif(     isNull(diagnosis_description) || trim(diagnosis_description) == '',     toString(null()),     trim(diagnosis_description) ),",
 				"          descripcion_comparacion = iif(     isNull(diagnosis_description),     '__SIN_DESCRIPCION__',     diagnosis_description )) ~> derivedDiagnosticos",
 				"srcDimDiagnostico derive(descripcion_comparacion_gold = iif(     isNull(descripcion_patologia),     '__SIN_DESCRIPCION__',     descripcion_patologia )) ~> derivedDimDiagnostico",
-				"derivedColumn1 sink(allowSchemaDrift: true,",
+				"derivedColumn1, srcDiagnosticoGenerico lookup(1 == 1,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'right')~> lookup5",
+				"lookup5 derive(diagnostico_key = iif(isNull(diagnostico_key), diagnostico_key_generico, diagnostico_key)) ~> derivedColumn2",
+				"derivedColumn2 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
 				"          admision_key as long,",
