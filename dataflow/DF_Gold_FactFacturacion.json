@@ -1,0 +1,17 @@
+{
+	"name": "DF_Gold_FactFacturacion",
+	"properties": {
+		"folder": {
+			"name": "Gold"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [],
+			"sinks": [],
+			"transformations": [],
+			"scriptLines": [
+				""
+			]
+		}
+	}
+}
