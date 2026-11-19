@@ -70,6 +70,9 @@
 				},
 				{
 					"name": "select1"
+				},
+				{
+					"name": "derivedBilling"
 				}
 			],
 			"scriptLines": [
@@ -129,7 +132,7 @@
 				"     validateSchema: false,",
 				"     isolationLevel: 'READ_UNCOMMITTED',",
 				"     format: 'table') ~> srcDimServicioCargo",
-				"srcBilling, srcAdmisiones lookup(srcBilling@admission_id == srcAdmisiones@admission_id,",
+				"derivedBilling, srcAdmisiones lookup(srcBilling@admission_id == srcAdmisiones@admission_id,",
 				"     multiple: false,",
 				"     pickup: 'any',",
 				"     broadcast: 'auto')~> lookup1",
@@ -160,6 +163,7 @@
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> select1",
+				"srcBilling derive(payment_status = iif(     isNull(payment_status) || trim(payment_status) == '',     'No especificado',     trim(payment_status) )) ~> derivedBilling",
 				"select1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
