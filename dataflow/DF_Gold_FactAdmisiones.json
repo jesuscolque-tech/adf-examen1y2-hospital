@@ -67,6 +67,12 @@
 				},
 				{
 					"name": "derivedColumn1"
+				},
+				{
+					"name": "derivedDiagnosticos"
+				},
+				{
+					"name": "derivedDimDiagnostico"
 				}
 			],
 			"scriptLines": [
@@ -134,11 +140,11 @@
 				"     multiple: false,",
 				"     pickup: 'any',",
 				"     broadcast: 'auto')~> lookup2",
-				"lookup2, srcDiagnosticos lookup(srcAdmisiones@admission_id == srcDiagnosticos@admission_id,",
+				"lookup2, derivedDiagnosticos lookup(srcAdmisiones@admission_id == srcDiagnosticos@admission_id,",
 				"     multiple: true,",
 				"     broadcast: 'auto')~> lookup3",
-				"lookup3, srcDimDiagnostico lookup(icd_code == codigo_icd",
-				"     && diagnosis_description == descripcion_patologia",
+				"lookup3, derivedDimDiagnostico lookup(icd_code == codigo_icd",
+				"     && descripcion_comparacion == descripcion_comparacion_gold",
 				"     && severity == nivel_severidad,",
 				"     multiple: false,",
 				"     pickup: 'any',",
@@ -153,6 +159,10 @@
 				"    toInteger(minus(discharge_date, admission_date))\r",
 				"),",
 				"          conteo_admisiones = 1) ~> derivedColumn1",
+				"srcDiagnosticos derive(severity = iif(     isNull(severity) || trim(severity) == '',     'No especificado',     trim(severity) ),",
+				"          diagnosis_description = iif(     isNull(diagnosis_description) || trim(diagnosis_description) == '',     toString(null()),     trim(diagnosis_description) ),",
+				"          descripcion_comparacion = iif(     isNull(diagnosis_description),     '__SIN_DESCRIPCION__',     diagnosis_description )) ~> derivedDiagnosticos",
+				"srcDimDiagnostico derive(descripcion_comparacion_gold = iif(     isNull(descripcion_patologia),     '__SIN_DESCRIPCION__',     descripcion_patologia )) ~> derivedDimDiagnostico",
 				"derivedColumn1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
